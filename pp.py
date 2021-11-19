@@ -1,0 +1,364 @@
+import telebot
+import time
+import random
+from telebot import types
+import requests
+from bs4 import BeautifulSoup 
+import re
+import nltk
+from transliterate import translit, get_available_language_codes
+
+
+TOKEN = '1923581477:AAETuE63s3ml77dVo0F90bPqe35-rzAk6fA' 
+bot = telebot.TeleBot(TOKEN, parse_mode=None)
+
+RUS = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя- '
+EN = 'abcdefghijklnmopqrstuvwxyz- '
+
+utoch = []
+
+def filter_text(text):
+	text = text.lower()
+	k = 0
+	for i in range(0, len(text)):
+		if text[i] in EN:
+			k += 1
+	if(k/len(text) > 0.8):
+		text = translit(text, 'ru')
+	text = [c for c in text if c in 'abcdefghijklmnopqrstuvwxyzабвгдеёжзийклмнопрстуфхцчшщъыьэюя- ']
+	text = ''.join(text)
+	return text
+
+
+@bot.message_handler(commands=['start', 'help'])
+def send_welcome(message):
+	bot.reply_to(message, "Для того чтобы посмотреть команды откройте /menu")
+
+
+@bot.message_handler(commands=['menu'])
+def artem(message):
+	b = message.chat.id
+	markup = types.ReplyKeyboardMarkup(row_width=1)
+	itembtn1 = types.KeyboardButton('/random')
+	itembtn2 = types.KeyboardButton('/weather')
+	itembtn3 = types.KeyboardButton('/еще не сделано')
+	itembtn4 = types.KeyboardButton('/pen')
+	itembtn5 = types.KeyboardButton('/ref')
+	markup.add(itembtn1, itembtn2, itembtn3, itembtn4, itembtn5)
+	bot.send_message(b, "Choose one option:", reply_markup=markup)
+
+
+@bot.message_handler(content_types=['text'])
+def send_text(m):
+	if m.text.lower() == '/random':
+		bot.send_message(m.chat.id, 'Введите диапазон (два числа через пробел)')
+		bot.register_next_step_handler(m, rnd)
+	elif m.text.lower() == '/weather':
+		bot.send_message(m.chat.id, 'Введите город')
+		bot.register_next_step_handler(m, weather)
+	elif m.text.lower() == '/еще не сделано':
+		bot.send_message(m.chat.id, 'Введите имя')
+		bot.register_next_step_handler(m, ans3)
+	elif m.text.lower() == '/pen':
+		bot.send_message(m.chat.id, 'Введите имя первого и второго игрока через пробел, например(Артем Артем)')
+		bot.register_next_step_handler(m, ans1)
+	elif m.text.lower() == '/ref':
+		bot.send_message(m.chat.id, 'Введите cлово, по которому вы хотите получить ссылку с сайта ПК')
+		bot.register_next_step_handler(m, ref)
+	else:
+		bot.send_message(m.chat.id, "Нет такой команды, чтобы посмотреть команды откройте /menu")
+
+def change(words, question):
+	variants = []
+	for i in range(0, len(words)):
+		dist = nltk.edit_distance(words[i], question)
+		r = dist/len(question)
+		if r < 0.4:
+			return words[i]
+			variants.append({words[i], r})
+	return question
+	'''
+	sorted(variants, key = lambda x: x[1])
+	if(len(variants) != 0):
+		return variants[0]
+	else:
+		return question
+	'''
+
+def comp(lst, reference, question, words):
+	#try:
+		
+		for i in range(0, len(lst)-1):
+			result = re.search(fr"{question}", lst[i])
+			if result != None:
+				ans = str(lst[i])
+				k1 = 0
+				for j in range(0, len(ans)-1):
+					if(ans[j] == 'h' and ans[j+1] == 'r' and ans[j+2] == 'e' and ans[j+3] == 'f'):
+						k1 = j+6
+						break
+				k2 = 0
+				for j in range(k1, len(ans)-1):
+					if(ans[j] == '>'):
+						k2 = j
+						break
+				
+				for j in range(k1, k2-1):
+					reference += ans[j]
+
+				break
+	
+		if(len(reference) > 0):
+			if(len(reference) < 4):
+				if('<' and '>' not in reference):
+					reference = 'https://admission.mephi.ru/'
+				else:
+					return 'Нет такой ссылки'
+			elif(reference[0] != 'h' and reference[1] != 't' and reference[2] != 't' and reference[3] != 'p'):
+				lnk = reference
+				reference = 'https://admission.mephi.ru/'
+				reference += lnk
+			#bot.send_message(message.chat.id, reference)
+			return reference
+		else:
+			return 'Нет такой ссылки'
+			#bot.send_message(message.chat.id, 'Нет такой ссылки')
+			#print(reference)'''
+		'''
+		except:
+		return "ОШИБКА!"
+		bot.send_message(message.chat.id, "ОШИБКА!")'''
+      
+def ref(message):
+	#try:
+		utoch.clear()
+
+		question = message.text
+		question = filter_text(str(question))
+
+		qst = re.split('; |, | |\n', question)
+		qst.append(question)
+		print(qst)
+
+		link = 'https://admission.mephi.ru/'
+
+
+		responce = requests.get(link).text
+		soup = BeautifulSoup(responce, 'lxml')
+
+		#block = soup.find_all #все элементы
+		block = soup.find('div', id = 'top-menu')
+		block = str(block).lower()
+
+		words = [];
+		y = 0
+		while(y < len(block)):
+			word = ' '
+			while(block[y] in RUS):
+				word += block[y]
+				y += 1
+			if(len(word) > 2):
+				words.extend(filter_text(word).split())
+			y += 1
+
+		
+
+		lst = block.split('\n')
+		ssilka(lst)
+
+		proverka = set()
+		#utoch = []
+		for i in range(0, len(qst)):
+			reference = ''
+
+			pair1 = str(change(words, str(qst[i])))
+			string = comp(lst, reference, pair1, words)
+			#print(change(words, question))
+			if(string not in proverka and string != 'Нет такой ссылки'):
+				pair = (pair1, string)
+				utoch.append(pair)
+				#bot.send_message(message.chat.id, string)
+				proverka.add(string)
+		if(len(proverka) == 0):
+			bot.send_message(message.chat.id, 'Нет такой ссылки')
+		
+		if(len(utoch)>1):
+			bot.send_message(message.chat.id, 'Уточните запрос. Введите номер ключевого слова.')
+			for i in range(0, len(utoch)):
+				num = ''
+				num += str(i+1)
+				num += '.'
+				num += utoch[i][0]
+				bot.send_message(message.chat.id, num)
+			bot.register_next_step_handler(message, fun)
+		else:
+			bot.send_message(message.chat.id, utoch[0][1])
+		
+				
+
+	#except:
+		#bot.send_message(message.chat.id, "ОШИБКА!")
+
+
+def fun(message):
+	question = message.text
+	question = int(question)
+	bot.send_message(message.chat.id, utoch[question-1][1])
+
+
+def ssilka(lst):
+	f = open('AAAAAAAAAAAAAAAA.txt', 'w', encoding='utf-8')
+	for i in range(0, len(lst)):
+		string = str(lst[i])
+		if 'href' in string:
+			string = lst[i] + '\n'
+			
+			reference = ''
+			k1 = 0
+			for j in range(0, len(string)):
+				if(string[j] == 'h' and string[j+1] == 'r' and string[j+2] == 'e' and string[j+3] == 'f'):
+					k1 = j+6
+					break
+			k2 = 0
+			for j in range(k1, len(string)):
+				if(string[j] == '>'):
+					k2 = j
+					break
+			
+			for j in range(k1, k2-1):
+				reference += string[j]
+			if(len(reference) < 4):
+				if('<' and '>' not in reference):
+					reference = 'https://admission.mephi.ru/'
+				else:
+					return 'Нет такой ссылки'
+			elif(reference[0] != 'h' and reference[1] != 't' and reference[2] != 't' and reference[3] != 'p'):
+				lnk = reference
+				reference = 'https://admission.mephi.ru/'
+				reference += lnk
+			reference += '\n'
+			f.write(reference)
+	f.close()
+
+
+
+def ans1(message):
+	try:
+		st = str(message.text)
+		first = st.split()[0]
+		second = st.split()[1]
+
+		f = 0 
+		s = 0
+
+		for i in range (1, 6):
+			a = random.randint(1, 10)
+			if(a < 8):
+				time.sleep(1)
+				e = first + " ГОЛ!"
+				bot.send_message(message.chat.id, e)
+				f += 1
+			else:
+				time.sleep(1)
+				e = first + " Промазал(а)!"
+				bot.send_message(message.chat.id, e)
+			a = random.randint(1, 10)
+			if(a < 8):
+				time.sleep(1)
+				e = second + " ГОЛ!"
+				bot.send_message(message.chat.id, e)
+				s += 1
+			else:
+				time.sleep(1)
+				e = second + " Промазал(а)!"
+				bot.send_message(message.chat.id, e)
+
+		if f == s:
+			bot.send_message(message.chat.id, "Доп. удары")
+		while f == s:
+			a = random.randint(1, 10)
+			if(a < 8):
+				time.sleep(1)
+				e = first + " ГОЛ!"
+				bot.send_message(message.chat.id, e)
+				f += 1
+			else:
+				time.sleep(1)
+				e = first + " Промазал(а)!"
+				bot.send_message(message.chat.id, e)
+			a = random.randint(1, 10)
+			if(a < 8):
+				time.sleep(1)
+				e = second + " ГОЛ!"
+				bot.send_message(message.chat.id, e)
+				s += 1
+			else:
+				time.sleep(1)
+				e = second + " Промазал(а)!"
+				bot.send_message(message.chat.id, e)
+
+		r = first + " " + str(f) + ":" + str(s) + " " + second
+		bot.send_message(message.chat.id, r)
+	except:
+		bot.send_message(message.chat.id, "ОШИБКА!")
+
+
+
+
+#@bot.message_handler(commands=['random'])
+def rnd(message):
+	try:
+		s = str(message.text)
+		b = message.chat.id
+		b1 = int(s.split()[0])
+		b2 = int(s.split()[1])
+		#@bot.message_handler(message)
+		#s = str(message.text)
+		#interval=[int(x) for x in message.text.split()]
+		if(b2 < b1):
+			b1, b2 = b2, b1
+		a = random.randint(b1, b2)
+		bot.reply_to(message, a)
+		#bot.reply_to(message, b)
+	except:
+		bot.send_message(message.chat.id, "ОШИБКА!")
+
+#@bot.message_handler(regexp="/weather")
+def weather(message):
+	try:
+		question = str(message.text)
+
+		link = 'https://pogoda.mail.ru/prognoz/'
+		link += question
+
+		responce = requests.get(link).text
+
+
+		soup = BeautifulSoup(responce, 'lxml')
+
+		block = soup.find('div', class_='information__content__temperature')
+		block = str(block)
+
+		ans = ''
+
+		for i in range(0, len(block)):
+			if(block[i] == '/' and block[i+1] == 's' and block[i+2] == 'p' and block[i+3] == 'a' and block[i+4] == 'n'):
+				j = i+6
+				while(block[j] != '<'):
+					ans += block[j]
+					j+=1
+
+		bot.send_message(message.chat.id, ans)
+	except:
+		bot.send_message(message.chat.id, "ОШИБКА!")
+
+
+
+#@bot.message_handler(regexp="d")
+def ans3(message):
+	s = "Я " + str(message.text)
+	bot.reply_to(message, s)
+
+
+bot.polling(none_stop=True)
+#bot.infinity_polling()

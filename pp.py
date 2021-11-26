@@ -85,9 +85,8 @@ def change(words, question):
 		return question
 	'''
 
-def comp(lst, reference, question, words):
-	#try:
-		
+def comp(lst, reference, question):
+	try:
 		for i in range(0, len(lst)-1):
 			result = re.search(fr"{question}", lst[i])
 			if result != None:
@@ -124,10 +123,9 @@ def comp(lst, reference, question, words):
 			return 'Нет такой ссылки'
 			#bot.send_message(message.chat.id, 'Нет такой ссылки')
 			#print(reference)'''
-		'''
-		except:
+	except:
 		return "ОШИБКА!"
-		bot.send_message(message.chat.id, "ОШИБКА!")'''
+		bot.send_message(message.chat.id, "ОШИБКА!")
       
 def ref(message):
 	#try:
@@ -164,7 +162,8 @@ def ref(message):
 		
 
 		lst = block.split('\n')
-		ssilka(lst)
+
+		#ssilka(lst, words)
 
 		proverka = set()
 		#utoch = []
@@ -172,7 +171,7 @@ def ref(message):
 			reference = ''
 
 			pair1 = str(change(words, str(qst[i])))
-			string = comp(lst, reference, pair1, words)
+			string = comp(lst, reference, pair1)
 			#print(change(words, question))
 			if(string not in proverka and string != 'Нет такой ссылки'):
 				pair = (pair1, string)
@@ -184,16 +183,28 @@ def ref(message):
 		
 		if(len(utoch)>1):
 			bot.send_message(message.chat.id, 'Уточните запрос. Введите номер ключевого слова.')
+			b = message.chat.id
+			itembtn = [0]*len(utoch)
+			markup = types.ReplyKeyboardMarkup(row_width=1)
+			
+			
+
+			#bot.send_message(b, "Choose one option:", reply_markup=markup)
+
 			for i in range(0, len(utoch)):
 				num = ''
 				num += str(i+1)
 				num += '.'
 				num += utoch[i][0]
 				bot.send_message(message.chat.id, num)
+				itembtn[i] = types.KeyboardButton(str(i+1))
+				markup.row(itembtn[i])
+			
+			bot.send_message(b, "Choose one option:", reply_markup=markup)
+
 			bot.register_next_step_handler(message, fun)
-		else:
+		elif(len(utoch) == 1):
 			bot.send_message(message.chat.id, utoch[0][1])
-		
 				
 
 	#except:
@@ -206,39 +217,7 @@ def fun(message):
 	bot.send_message(message.chat.id, utoch[question-1][1])
 
 
-def ssilka(lst):
-	f = open('AAAAAAAAAAAAAAAA.txt', 'w', encoding='utf-8')
-	for i in range(0, len(lst)):
-		string = str(lst[i])
-		if 'href' in string:
-			string = lst[i] + '\n'
-			
-			reference = ''
-			k1 = 0
-			for j in range(0, len(string)):
-				if(string[j] == 'h' and string[j+1] == 'r' and string[j+2] == 'e' and string[j+3] == 'f'):
-					k1 = j+6
-					break
-			k2 = 0
-			for j in range(k1, len(string)):
-				if(string[j] == '>'):
-					k2 = j
-					break
-			
-			for j in range(k1, k2-1):
-				reference += string[j]
-			if(len(reference) < 4):
-				if('<' and '>' not in reference):
-					reference = 'https://admission.mephi.ru/'
-				else:
-					return 'Нет такой ссылки'
-			elif(reference[0] != 'h' and reference[1] != 't' and reference[2] != 't' and reference[3] != 'p'):
-				lnk = reference
-				reference = 'https://admission.mephi.ru/'
-				reference += lnk
-			reference += '\n'
-			f.write(reference)
-	f.close()
+
 
 
 

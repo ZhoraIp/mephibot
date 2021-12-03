@@ -75,7 +75,7 @@ def change(words, question):
 
 
 def comp(lst, reference, question):
-	#try:
+	try:
 		for i in range(0, len(lst)):
 			result = re.search(fr"{question}", lst[i])
 			if result != None:
@@ -107,12 +107,11 @@ def comp(lst, reference, question):
 		else:
 			return 'Нет такой ссылки'
 
-	#except:
-		#return "ОШИБКА!"
-		#bot.send_message(message.chat.id, "ОШИБКА!")
+	except:
+		return "ОШИБКА!"
       
 def ref(message):
-	#try:
+	try:
 		utoch.clear()
 
 		question = message.text
@@ -179,8 +178,8 @@ def ref(message):
 		elif(len(utoch) == 1):
 			bot.send_message(message.chat.id, utoch[0][1])	
 
-	#except:
-		#bot.send_message(message.chat.id, "ОШИБКА!")
+	except:
+		bot.send_message(message.chat.id, "ОШИБКА!")
 
 
 def fun(message):

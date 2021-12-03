@@ -9,7 +9,7 @@ import nltk
 from transliterate import translit, get_available_language_codes
 
 
-TOKEN = '1923581477:AAETuE63s3ml77dVo0F90bPqe35-rzAk6fA' 
+TOKEN = '1923581477:AAG77Qs3y8UCD7Low50zhhYZeemuQ5ja7gg' 
 bot = telebot.TeleBot(TOKEN, parse_mode=None)
 
 RUS = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя- '
@@ -41,10 +41,9 @@ def artem(message):
 	markup = types.ReplyKeyboardMarkup(row_width=1)
 	itembtn1 = types.KeyboardButton('/random')
 	itembtn2 = types.KeyboardButton('/weather')
-	itembtn3 = types.KeyboardButton('/еще не сделано')
-	itembtn4 = types.KeyboardButton('/pen')
-	itembtn5 = types.KeyboardButton('/ref')
-	markup.add(itembtn1, itembtn2, itembtn3, itembtn4, itembtn5)
+	itembtn3 = types.KeyboardButton('/pen')
+	itembtn4 = types.KeyboardButton('/ref')
+	markup.add(itembtn1, itembtn2, itembtn3, itembtn4)
 	bot.send_message(b, "Choose one option:", reply_markup=markup)
 
 
@@ -56,9 +55,6 @@ def send_text(m):
 	elif m.text.lower() == '/weather':
 		bot.send_message(m.chat.id, 'Введите город')
 		bot.register_next_step_handler(m, weather)
-	elif m.text.lower() == '/еще не сделано':
-		bot.send_message(m.chat.id, 'Введите имя')
-		bot.register_next_step_handler(m, ans3)
 	elif m.text.lower() == '/pen':
 		bot.send_message(m.chat.id, 'Введите имя первого и второго игрока через пробел, например(Артем Артем)')
 		bot.register_next_step_handler(m, ans1)
@@ -69,63 +65,51 @@ def send_text(m):
 		bot.send_message(m.chat.id, "Нет такой команды, чтобы посмотреть команды откройте /menu")
 
 def change(words, question):
-	variants = []
 	for i in range(0, len(words)):
 		dist = nltk.edit_distance(words[i], question)
-		r = dist/len(question)
-		if r < 0.4:
-			return words[i]
-			variants.append({words[i], r})
+		if(len(question)>0):
+			r = dist/len(question)
+			if r < 0.4:
+				return words[i]
 	return question
-	'''
-	sorted(variants, key = lambda x: x[1])
-	if(len(variants) != 0):
-		return variants[0]
-	else:
-		return question
-	'''
+
 
 def comp(lst, reference, question):
-	try:
-		for i in range(0, len(lst)-1):
+	#try:
+		for i in range(0, len(lst)):
 			result = re.search(fr"{question}", lst[i])
 			if result != None:
 				ans = str(lst[i])
 				k1 = 0
-				for j in range(0, len(ans)-1):
-					if(ans[j] == 'h' and ans[j+1] == 'r' and ans[j+2] == 'e' and ans[j+3] == 'f'):
-						k1 = j+6
-						break
 				k2 = 0
-				for j in range(k1, len(ans)-1):
-					if(ans[j] == '>'):
-						k2 = j
-						break
+				if(ans.find('href') != -1):
+					k1 = ans.find('href')+6
+
+				if(ans.find('>', k1, len(ans)) != -1):
+					k2 = ans.find('>', k1, len(ans))
+
+				print(k1, k2)
 				
 				for j in range(k1, k2-1):
 					reference += ans[j]
 
 				break
-	
-		if(len(reference) > 0):
-			if(len(reference) < 4):
-				if('<' and '>' not in reference):
-					reference = 'https://admission.mephi.ru/'
-				else:
-					return 'Нет такой ссылки'
-			elif(reference[0] != 'h' and reference[1] != 't' and reference[2] != 't' and reference[3] != 'p'):
+		
+		if((reference.find('>')+1)+(reference.find('<')+1)+(reference.find('title')+1)>0):
+			return 'Нет такой ссылки'
+		elif(len(reference) > 0):
+
+			if(reference.find('http') == -1):
 				lnk = reference
 				reference = 'https://admission.mephi.ru/'
 				reference += lnk
-			#bot.send_message(message.chat.id, reference)
 			return reference
 		else:
 			return 'Нет такой ссылки'
-			#bot.send_message(message.chat.id, 'Нет такой ссылки')
-			#print(reference)'''
-	except:
-		return "ОШИБКА!"
-		bot.send_message(message.chat.id, "ОШИБКА!")
+
+	#except:
+		#return "ОШИБКА!"
+		#bot.send_message(message.chat.id, "ОШИБКА!")
       
 def ref(message):
 	#try:
@@ -140,11 +124,9 @@ def ref(message):
 
 		link = 'https://admission.mephi.ru/'
 
-
 		responce = requests.get(link).text
 		soup = BeautifulSoup(responce, 'lxml')
 
-		#block = soup.find_all #все элементы
 		block = soup.find('div', id = 'top-menu')
 		block = str(block).lower()
 
@@ -159,25 +141,21 @@ def ref(message):
 				words.extend(filter_text(word).split())
 			y += 1
 
-		
-
 		lst = block.split('\n')
 
-		#ssilka(lst, words)
-
 		proverka = set()
-		#utoch = []
+
 		for i in range(0, len(qst)):
 			reference = ''
 
 			pair1 = str(change(words, str(qst[i])))
 			string = comp(lst, reference, pair1)
-			#print(change(words, question))
+
 			if(string not in proverka and string != 'Нет такой ссылки'):
 				pair = (pair1, string)
 				utoch.append(pair)
-				#bot.send_message(message.chat.id, string)
 				proverka.add(string)
+
 		if(len(proverka) == 0):
 			bot.send_message(message.chat.id, 'Нет такой ссылки')
 		
@@ -187,10 +165,6 @@ def ref(message):
 			itembtn = [0]*len(utoch)
 			markup = types.ReplyKeyboardMarkup(row_width=1)
 			
-			
-
-			#bot.send_message(b, "Choose one option:", reply_markup=markup)
-
 			for i in range(0, len(utoch)):
 				num = ''
 				num += str(i+1)
@@ -199,13 +173,11 @@ def ref(message):
 				bot.send_message(message.chat.id, num)
 				itembtn[i] = types.KeyboardButton(str(i+1))
 				markup.row(itembtn[i])
-			
 			bot.send_message(b, "Choose one option:", reply_markup=markup)
-
 			bot.register_next_step_handler(message, fun)
+
 		elif(len(utoch) == 1):
-			bot.send_message(message.chat.id, utoch[0][1])
-				
+			bot.send_message(message.chat.id, utoch[0][1])	
 
 	#except:
 		#bot.send_message(message.chat.id, "ОШИБКА!")
@@ -215,11 +187,6 @@ def fun(message):
 	question = message.text
 	question = int(question)
 	bot.send_message(message.chat.id, utoch[question-1][1])
-
-
-
-
-
 
 def ans1(message):
 	try:
@@ -281,28 +248,20 @@ def ans1(message):
 	except:
 		bot.send_message(message.chat.id, "ОШИБКА!")
 
-
-
-
-#@bot.message_handler(commands=['random'])
 def rnd(message):
 	try:
 		s = str(message.text)
 		b = message.chat.id
 		b1 = int(s.split()[0])
 		b2 = int(s.split()[1])
-		#@bot.message_handler(message)
-		#s = str(message.text)
-		#interval=[int(x) for x in message.text.split()]
+
 		if(b2 < b1):
 			b1, b2 = b2, b1
 		a = random.randint(b1, b2)
 		bot.reply_to(message, a)
-		#bot.reply_to(message, b)
 	except:
 		bot.send_message(message.chat.id, "ОШИБКА!")
 
-#@bot.message_handler(regexp="/weather")
 def weather(message):
 	try:
 		question = str(message.text)
@@ -331,13 +290,4 @@ def weather(message):
 	except:
 		bot.send_message(message.chat.id, "ОШИБКА!")
 
-
-
-#@bot.message_handler(regexp="d")
-def ans3(message):
-	s = "Я " + str(message.text)
-	bot.reply_to(message, s)
-
-
 bot.polling(none_stop=True)
-#bot.infinity_polling()

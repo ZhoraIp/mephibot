@@ -12,10 +12,11 @@ from transliterate import translit, get_available_language_codes
 TOKEN = '1923581477:AAG77Qs3y8UCD7Low50zhhYZeemuQ5ja7gg' 
 bot = telebot.TeleBot(TOKEN, parse_mode=None)
 
-RUS = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя '
+RUS = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя\ '
 EN = 'abcdefghijklnmopqrstuvwxyz- '
 
 utoch = []
+summary = [{'Военная кафедра', '111'}]
 
 def filter_text(text):
 	text = text.lower()
@@ -96,7 +97,7 @@ def comp(lst, reference, question):
 				break
 		
 		if((reference.find('>')+1)+(reference.find('<')+1)+(reference.find('title')+1)>0):
-			return 'Нет такой ссылки'
+			return 'Нет такой ссылки, попробуйте поменять запрос'
 		elif(len(reference) > 0):
 
 			if(reference.find('http') == -1):
@@ -105,7 +106,7 @@ def comp(lst, reference, question):
 				reference += lnk
 			return reference
 		else:
-			return 'Нет такой ссылки'
+			return 'Нет такой ссылки, попробуйте поменять запрос'
 
 	#except:
 		#return "ОШИБКА!"
@@ -132,7 +133,7 @@ def ref(message):
 				#print(qst1[i])
 				qst.append(qst1[i])
 				
-		print(qst)
+		#print(qst)
 		
 		
 
@@ -159,7 +160,12 @@ def ref(message):
 		ph = []
 		t = []
 
-		lst = block.split('href="')
+		lst = []
+		lst1 = block.split('\n')
+		for i in range(0, len(lst1)):
+			lst.extend(lst1[i].split('href="'))
+
+
 		f = open('text.txt', 'w', encoding='utf-8')
 		for i in range(0, len(lst)):
 			f.write(str(lst[i]) + '\n')
@@ -211,15 +217,15 @@ def ref(message):
 					pair1 = ph[j]
 					print(ph[j])
 
-			print(pair1)
+			#print(pair1)
 
-			if(string not in proverka and string != 'Нет такой ссылки'):
+			if(string not in proverka and string != 'Нет такой ссылки, попробуйте поменять запрос'):
 				pair = (pair1, string)
 				utoch.append(pair)
 				proverka.add(string)
 
 		if(len(proverka) == 0):
-			bot.send_message(message.chat.id, 'Нет такой ссылки')
+			bot.send_message(message.chat.id, 'Нет такой ссылки, попробуйте поменять запрос')
 		
 		if(len(utoch)>1):
 			bot.send_message(message.chat.id, 'Пожалуйста, уточните запрос.')
@@ -228,6 +234,8 @@ def ref(message):
 			markup = types.ReplyKeyboardMarkup(row_width=1)
 			
 			for i in range(0, len(utoch)):
+				if(utoch[i][0] in summary):
+					print(summary[0])
 				num = ''
 				num += str(i+1)
 				num += '.'
@@ -235,7 +243,7 @@ def ref(message):
 				bot.send_message(message.chat.id, num)
 				itembtn[i] = types.KeyboardButton(str(i+1))
 				markup.row(itembtn[i])
-			bot.send_message(b, "По какому из слов вы хотите получить информацию?", reply_markup=markup)
+			bot.send_message(b, "По какому пункту вы хотите получить информацию?", reply_markup=markup)
 			bot.register_next_step_handler(message, fun)
 
 		elif(len(utoch) == 1):

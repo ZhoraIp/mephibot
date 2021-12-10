@@ -12,7 +12,7 @@ from transliterate import translit, get_available_language_codes
 TOKEN = '1923581477:AAG77Qs3y8UCD7Low50zhhYZeemuQ5ja7gg' 
 bot = telebot.TeleBot(TOKEN, parse_mode=None)
 
-RUS = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя- '
+RUS = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя '
 EN = 'abcdefghijklnmopqrstuvwxyz- '
 
 utoch = []
@@ -44,7 +44,7 @@ def artem(message):
 	itembtn3 = types.KeyboardButton('/pen')
 	itembtn4 = types.KeyboardButton('/ref')
 	markup.add(itembtn1, itembtn2, itembtn3, itembtn4)
-	bot.send_message(b, "Choose one option:", reply_markup=markup)
+	bot.send_message(b, "Выберите пункт меню:", reply_markup=markup)
 
 
 @bot.message_handler(content_types=['text'])
@@ -59,7 +59,7 @@ def send_text(m):
 		bot.send_message(m.chat.id, 'Введите имя первого и второго игрока через пробел, например(Артем Артем)')
 		bot.register_next_step_handler(m, ans1)
 	elif m.text.lower() == '/ref':
-		bot.send_message(m.chat.id, 'Введите cлово, по которому вы хотите получить ссылку с сайта ПК')
+		bot.send_message(m.chat.id, 'Введите запрос, по которому вы хотите получить ссылку с сайта ПК')
 		bot.register_next_step_handler(m, ref)
 	else:
 		bot.send_message(m.chat.id, "Нет такой команды, чтобы посмотреть команды откройте /menu")
@@ -75,7 +75,7 @@ def change(words, question):
 
 
 def comp(lst, reference, question):
-	try:
+	#try:
 		for i in range(0, len(lst)):
 			result = re.search(fr"{question}", lst[i])
 			if result != None:
@@ -88,7 +88,7 @@ def comp(lst, reference, question):
 				if(ans.find('>', k1, len(ans)) != -1):
 					k2 = ans.find('>', k1, len(ans))
 
-				print(k1, k2)
+				#print(k1, k2)
 				
 				for j in range(k1, k2-1):
 					reference += ans[j]
@@ -107,19 +107,34 @@ def comp(lst, reference, question):
 		else:
 			return 'Нет такой ссылки'
 
-	except:
-		return "ОШИБКА!"
+	#except:
+		#return "ОШИБКА!"
+		#bot.send_message(message.chat.id, "ОШИБКА!")
       
+def remove_at(i, s):
+    return s[:i] + s[i+1:]
+
 def ref(message):
-	try:
+	#try:
 		utoch.clear()
 
 		question = message.text
 		question = filter_text(str(question))
 
-		qst = re.split('; |, | |\n', question)
-		qst.append(question)
+		qst1 = re.split('; |, | |\n', question)
+		qst1.append(question)
+
+		qst = []
+		
+
+		for i in range(0, len(qst1)):
+			if(len(qst1[i]) > 2):
+				#print(qst1[i])
+				qst.append(qst1[i])
+				
 		print(qst)
+		
+		
 
 		link = 'https://admission.mephi.ru/'
 
@@ -140,15 +155,63 @@ def ref(message):
 				words.extend(filter_text(word).split())
 			y += 1
 
-		lst = block.split('\n')
+
+		ph = []
+		t = []
+
+		lst = block.split('href="')
+		f = open('text.txt', 'w', encoding='utf-8')
+		for i in range(0, len(lst)):
+			f.write(str(lst[i]) + '\n')
+
+		for i in range(0, len(lst)):
+			t.clear()
+			ans = ''
+			ans1 = ''
+			s = str(lst[i])
+			for j in range(0, len(s)):
+				if(s[j] in RUS):
+					ans += s[j]
+
+				'''
+			for j in range(1, len(ans)):
+				if(ans[j] == ' ' and ans[j-1] == ' '):
+					t.append(j-1)
+			ans1 = ans
+			for j in range(0, len(t)):
+				if(ans1[t[j]] == ' '):
+					ans = remove_at(t[j], ans)
+			'''
+			if(len(ans) > 2):
+				ph.append(str(ans))
+		print(ph)
+
+
+
+
+	
+			
+
+		#phrases(words, lst)
+
 
 		proverka = set()
+
+		#f = open('test.txt', 'r')
 
 		for i in range(0, len(qst)):
 			reference = ''
 
 			pair1 = str(change(words, str(qst[i])))
 			string = comp(lst, reference, pair1)
+
+
+			for j in range(0, len(ph)):
+				if(ph[j].find(pair1) != -1):
+					pair1 = ph[j]
+					print(ph[j])
+
+			print(pair1)
 
 			if(string not in proverka and string != 'Нет такой ссылки'):
 				pair = (pair1, string)
@@ -159,7 +222,7 @@ def ref(message):
 			bot.send_message(message.chat.id, 'Нет такой ссылки')
 		
 		if(len(utoch)>1):
-			bot.send_message(message.chat.id, 'Уточните запрос. Введите номер ключевого слова.')
+			bot.send_message(message.chat.id, 'Пожалуйста, уточните запрос.')
 			b = message.chat.id
 			itembtn = [0]*len(utoch)
 			markup = types.ReplyKeyboardMarkup(row_width=1)
@@ -172,20 +235,46 @@ def ref(message):
 				bot.send_message(message.chat.id, num)
 				itembtn[i] = types.KeyboardButton(str(i+1))
 				markup.row(itembtn[i])
-			bot.send_message(b, "Choose one option:", reply_markup=markup)
+			bot.send_message(b, "По какому из слов вы хотите получить информацию?", reply_markup=markup)
 			bot.register_next_step_handler(message, fun)
 
 		elif(len(utoch) == 1):
 			bot.send_message(message.chat.id, utoch[0][1])	
 
-	except:
-		bot.send_message(message.chat.id, "ОШИБКА!")
+	#except:
+		#bot.send_message(message.chat.id, "ОШИБКА!")
 
 
 def fun(message):
 	question = message.text
 	question = int(question)
 	bot.send_message(message.chat.id, utoch[question-1][1])
+
+def phrases(words, lst):
+	f = open('test.txt', 'w')
+	string1 = ''
+	string2 = ''
+	
+
+	for i in range(0, len(words)):
+		cnt = 0
+		slovo = words[i]
+		reference = ''
+		string1 = comp(lst, reference, words[i])
+		
+		for j in range(i+1, len(words)):
+			slovo1 = slovo + ' ' + words[j]
+			string2 = comp(lst, reference, slovo1)
+			if(string2 == string1):
+				slovo += ' ' + words[j]
+				cnt+=1
+			else:
+				break
+		i+=cnt
+		f.write(slovo + '\n')
+
+
+
 
 def ans1(message):
 	try:

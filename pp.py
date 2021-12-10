@@ -8,6 +8,7 @@ import re
 import nltk
 from transliterate import translit, get_available_language_codes
 
+#C:\Users\45vit\OneDrive\Рабочий стол\ПП\GitHub\mephibot
 
 TOKEN = '1923581477:AAG77Qs3y8UCD7Low50zhhYZeemuQ5ja7gg' 
 bot = telebot.TeleBot(TOKEN, parse_mode=None)

@@ -17,7 +17,7 @@ RUS = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабв�
 EN = 'abcdefghijklnmopqrstuvwxyz- '
 
 utoch = []
-summary = [{'Военная кафедра', '111'}]
+
 
 def filter_text(text):
 	text = text.lower()
@@ -77,7 +77,7 @@ def change(words, question):
 
 
 def comp(lst, reference, question):
-	#try:
+	try:
 		for i in range(0, len(lst)):
 			result = re.search(fr"{question}", lst[i])
 			if result != None:
@@ -109,15 +109,14 @@ def comp(lst, reference, question):
 		else:
 			return 'Нет такой ссылки, попробуйте поменять запрос'
 
-	#except:
-		#return "ОШИБКА!"
-		#bot.send_message(message.chat.id, "ОШИБКА!")
+	except:
+		return "ОШИБКА!"
       
 def remove_at(i, s):
     return s[:i] + s[i+1:]
 
 def ref(message):
-	#try:
+	try:
 		utoch.clear()
 
 		question = message.text
@@ -179,25 +178,16 @@ def ref(message):
 			for j in range(0, len(s)):
 				if(s[j] in RUS):
 					ans += s[j]
-
-				'''
-			for j in range(1, len(ans)):
-				if(ans[j] == ' ' and ans[j-1] == ' '):
-					t.append(j-1)
-			ans1 = ans
-			for j in range(0, len(t)):
-				if(ans1[t[j]] == ' '):
-					ans = remove_at(t[j], ans)
-			'''
 			if(len(ans) > 2):
 				ph.append(str(ans))
-		print(ph)
+		#print(ph)	
 
+		with open("sum.txt", "r", encoding='utf-8') as ins:
+		    array = []
+		    for line in ins:
+		        array.append(line)
 
-
-
-	
-			
+		print(array)
 
 		#phrases(words, lst)
 
@@ -206,23 +196,28 @@ def ref(message):
 
 		#f = open('test.txt', 'r')
 
+		k = -1	
 		for i in range(0, len(qst)):
 			reference = ''
 
 			pair1 = str(change(words, str(qst[i])))
 			string = comp(lst, reference, pair1)
+			k = -1
 
+			for j in range(0, len(array)):
+				if(array[j].find(pair1) != -1 and j%2 != 1):
+					k = j
+					break
 
 			for j in range(0, len(ph)):
 				if(ph[j].find(pair1) != -1):
 					pair1 = ph[j]
-					print(ph[j])
 
 			#print(pair1)
 
 			if(string not in proverka and string != 'Нет такой ссылки, попробуйте поменять запрос'):
-				pair = (pair1, string)
-				utoch.append(pair)
+				triple = (pair1, string, k)
+				utoch.append(triple)
 				proverka.add(string)
 
 		if(len(proverka) == 0):
@@ -235,12 +230,14 @@ def ref(message):
 			markup = types.ReplyKeyboardMarkup(row_width=1)
 			
 			for i in range(0, len(utoch)):
-				if(utoch[i][0] in summary):
-					print(summary[0])
+				st = ''
 				num = ''
 				num += str(i+1)
-				num += '.'
-				num += utoch[i][0]
+				num += ')'
+				st += utoch[i][0][0].upper()+utoch[i][0][1:]
+				num += st
+				if(utoch[i][2] != -1):
+					num += '\n' + array[utoch[i][2]+1]
 				bot.send_message(message.chat.id, num)
 				itembtn[i] = types.KeyboardButton(str(i+1))
 				markup.row(itembtn[i])
@@ -250,8 +247,8 @@ def ref(message):
 		elif(len(utoch) == 1):
 			bot.send_message(message.chat.id, utoch[0][1])	
 
-	#except:
-		#bot.send_message(message.chat.id, "ОШИБКА!")
+	except:
+		bot.send_message(message.chat.id, "ОШИБКА!")
 
 
 def fun(message):

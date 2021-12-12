@@ -10,14 +10,14 @@ from transliterate import translit, get_available_language_codes
 
 #C:\Users\45vit\OneDrive\Рабочий стол\ПП\GitHub\mephibot
 
-TOKEN = '1923581477:AAG77Qs3y8UCD7Low50zhhYZeemuQ5ja7gg' 
+TOKEN = '1923581477:AAFx_X4ZPEisIfxhaFiYmmp20toFUg_i7yM' 
 bot = telebot.TeleBot(TOKEN, parse_mode=None)
 
 RUS = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя\ '
 EN = 'abcdefghijklnmopqrstuvwxyz- '
 
 utoch = []
-
+array = []
 
 def filter_text(text):
 	text = text.lower()
@@ -130,13 +130,8 @@ def ref(message):
 
 		for i in range(0, len(qst1)):
 			if(len(qst1[i]) > 2):
-				#print(qst1[i])
 				qst.append(qst1[i])
 				
-		#print(qst)
-		
-		
-
 		link = 'https://admission.mephi.ru/'
 
 		responce = requests.get(link).text
@@ -165,11 +160,6 @@ def ref(message):
 		for i in range(0, len(lst1)):
 			lst.extend(lst1[i].split('href="'))
 
-
-		f = open('text.txt', 'w', encoding='utf-8')
-		for i in range(0, len(lst)):
-			f.write(str(lst[i]) + '\n')
-
 		for i in range(0, len(lst)):
 			t.clear()
 			ans = ''
@@ -180,21 +170,12 @@ def ref(message):
 					ans += s[j]
 			if(len(ans) > 2):
 				ph.append(str(ans))
-		#print(ph)	
 
 		with open("sum.txt", "r", encoding='utf-8') as ins:
-		    array = []
 		    for line in ins:
 		        array.append(line)
 
-		print(array)
-
-		#phrases(words, lst)
-
-
 		proverka = set()
-
-		#f = open('test.txt', 'r')
 
 		k = -1	
 		for i in range(0, len(qst)):
@@ -212,8 +193,6 @@ def ref(message):
 			for j in range(0, len(ph)):
 				if(ph[j].find(pair1) != -1):
 					pair1 = ph[j]
-
-			#print(pair1)
 
 			if(string not in proverka and string != 'Нет такой ссылки, попробуйте поменять запрос'):
 				triple = (pair1, string, k)
@@ -236,8 +215,7 @@ def ref(message):
 				num += ')'
 				st += utoch[i][0][0].upper()+utoch[i][0][1:]
 				num += st
-				if(utoch[i][2] != -1):
-					num += '\n' + array[utoch[i][2]+1]
+
 				bot.send_message(message.chat.id, num)
 				itembtn[i] = types.KeyboardButton(str(i+1))
 				markup.row(itembtn[i])
@@ -245,7 +223,11 @@ def ref(message):
 			bot.register_next_step_handler(message, fun)
 
 		elif(len(utoch) == 1):
-			bot.send_message(message.chat.id, utoch[0][1])	
+			if(utoch[0][2] != -1):
+				bot.send_message(message.chat.id, array[utoch[0][2]+1])
+				bot.send_message(message.chat.id, "Подробнее по ссылке: " + utoch[0][1])
+			else:
+				bot.send_message(message.chat.id, "Читайте по ссылке: " + utoch[0][1])
 
 	except:
 		bot.send_message(message.chat.id, "ОШИБКА!")
@@ -254,7 +236,12 @@ def ref(message):
 def fun(message):
 	question = message.text
 	question = int(question)
-	bot.send_message(message.chat.id, utoch[question-1][1])
+
+	if(utoch[question-1][2] != -1):
+		bot.send_message(message.chat.id, array[utoch[question-1][2]+1])
+		bot.send_message(message.chat.id, "Подробнее по ссылке: " + utoch[question-1][1])
+	else:
+		bot.send_message(message.chat.id, "Читайте по ссылке: " + utoch[question-1][1])		
 
 def phrases(words, lst):
 	f = open('test.txt', 'w')
